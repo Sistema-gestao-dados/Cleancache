@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Limpa Cache</string>
+    <string name="tile_label">Limpar cache</string>
+    <string name="acc_description">Usado só para abrir a tela de cada app e tocar no botão \"Limpar cache\" para você. Nada é lido, guardado ou enviado.</string>
+</resources>

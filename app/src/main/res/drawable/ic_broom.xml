@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- cabo -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M60,22 L66,28 L50,52 L44,46 Z" />
+    <!-- cerdas -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M42,48 L52,58 L46,80 C40,84 32,82 28,76 C34,70 38,60 42,48 Z" />
+    <path
+        android:fillColor="#B7F0D4"
+        android:pathData="M54,60 L62,66 C60,76 54,84 46,86 L48,74 Z" />
+</vector>

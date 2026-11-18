@@ -15,7 +15,20 @@ android {
         versionName = "1.0"
     }
 
+    // Chave fixa: assim cada APK novo atualiza por cima do anterior
+    signingConfigs {
+        create("fixa") {
+            storeFile = file("limpacache.keystore")
+            storePassword = "limpacache"
+            keyAlias = "limpacache"
+            keyPassword = "limpacache"
+        }
+    }
+
     buildTypes {
+        debug {
+            signingConfig = signingConfigs.getByName("fixa")
+        }
         release {
             isMinifyEnabled = false
         }

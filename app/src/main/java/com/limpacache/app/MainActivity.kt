@@ -2,6 +2,7 @@ package com.limpacache.app
 
 import android.app.Activity
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -16,6 +17,7 @@ import android.view.ViewGroup
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
@@ -30,6 +32,8 @@ class MainActivity : Activity() {
     private lateinit var setupBox: LinearLayout
     private lateinit var listBox: LinearLayout
     private lateinit var selectAll: CheckBox
+    private lateinit var progress: ProgressBar
+    private lateinit var refreshBtn: Button
 
     private var items: List<AppCache> = emptyList()
     private var scanning = false
@@ -66,6 +70,13 @@ class MainActivity : Activity() {
         GradientDrawable().apply {
             setColor(color)
             cornerRadius = dp(radiusDp).toFloat()
+        }
+
+    private fun outlined(): GradientDrawable =
+        GradientDrawable().apply {
+            setColor(Color.WHITE)
+            setStroke(dp(2), green)
+            cornerRadius = dp(14).toFloat()
         }
 
     private fun params(top: Int = 0, bottom: Int = 0): LinearLayout.LayoutParams =
@@ -129,6 +140,37 @@ class MainActivity : Activity() {
             LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, dp(64)
             ).apply { setMargins(dp(16), dp(16), dp(16), 0) }
+        )
+
+        refreshBtn = Button(this).apply {
+            text = "↻  Atualizar números"
+            textSize = 15f
+            isAllCaps = false
+            setTextColor(green)
+            background = outlined()
+            setOnClickListener {
+                statusText.text = "Atualizando..."
+                scan()
+            }
+        }
+        body.addView(
+            refreshBtn,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(48)
+            ).apply { setMargins(dp(16), dp(10), dp(16), 0) }
+        )
+
+        progress = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
+            max = 100
+            progress = 0
+            progressTintList = ColorStateList.valueOf(green)
+            visibility = View.GONE
+        }
+        body.addView(
+            progress,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, dp(10)
+            ).apply { setMargins(dp(16), dp(14), dp(16), 0) }
         )
 
         statusText = TextView(this).apply {
@@ -262,6 +304,7 @@ class MainActivity : Activity() {
                 list.forEach { if (it.pkg in unchecked) it.selected = false }
                 items = list
                 renderList()
+                if (statusText.text == "Atualizando...") statusText.text = "Números atualizados."
             }
         }.start()
     }
@@ -272,7 +315,33 @@ class MainActivity : Activity() {
         else "Cache total: ${CacheScanner.format(sum)}  •  ${items.size} apps"
         selectAll.isChecked = items.isNotEmpty() && items.all { it.selected }
         listBox.removeAllViews()
-        for (item in items) {
+        addSection("Apps instalados", items.filter { !it.system })
+        addSection("Apps do sistema", items.filter { it.system })
+    }
+
+    /** Um grupo (instalados ou sistema) com caixinha para marcar o grupo inteiro. */
+    private fun addSection(title: String, list: List<AppCache>) {
+        if (list.isEmpty()) return
+        val head = CheckBox(this).apply {
+            text = "$title  •  ${list.size} apps  •  ${CacheScanner.format(list.sumOf { it.bytes })}"
+            textSize = 16f
+            setTypeface(typeface, Typeface.BOLD)
+            setTextColor(green)
+            isChecked = list.all { it.selected }
+            setPadding(dp(8), dp(12), dp(8), dp(12))
+            setOnClickListener {
+                val on = isChecked
+                list.forEach { it.selected = on }
+                renderList()
+            }
+        }
+        listBox.addView(
+            head,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply { topMargin = dp(14) }
+        )
+        for (item in list) {
             val box = CheckBox(this).apply {
                 text = "${item.label}  •  ${CacheScanner.format(item.bytes)}"
                 textSize = 15f
@@ -282,6 +351,7 @@ class MainActivity : Activity() {
                 setOnCheckedChangeListener { _, checked ->
                     item.selected = checked
                     selectAll.isChecked = items.all { it.selected }
+                    head.isChecked = list.all { it.selected }
                 }
             }
             listBox.addView(
@@ -298,8 +368,14 @@ class MainActivity : Activity() {
             val n = minOf(CleanState.done + 1, CleanState.total)
             statusText.text = "Limpando $n de ${CleanState.total}: ${CleanState.currentLabel}"
             cleanBtn.text = "PARAR"
+            progress.visibility = View.VISIBLE
+            progress.progress =
+                if (CleanState.total > 0) CleanState.done * 100 / CleanState.total else 0
+            refreshBtn.isEnabled = false
         } else {
             cleanBtn.text = "LIMPAR CACHE AGORA"
+            progress.visibility = View.GONE
+            refreshBtn.isEnabled = true
             val msg = CleanState.finishedMessage
             if (msg != null) {
                 CleanState.finishedMessage = null

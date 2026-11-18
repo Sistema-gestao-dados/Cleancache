@@ -3,6 +3,7 @@ package com.limpacache.app
 import android.app.AppOpsManager
 import android.app.usage.StorageStatsManager
 import android.content.Context
+import android.content.pm.ApplicationInfo
 import android.os.Build
 import android.os.Process
 import android.os.storage.StorageManager
@@ -15,6 +16,7 @@ data class AppCache(
     val pkg: String,
     val label: String,
     val bytes: Long,
+    val system: Boolean = false,
     var selected: Boolean = true
 )
 
@@ -61,7 +63,17 @@ object CacheScanner {
                     .queryStatsForPackage(StorageManager.UUID_DEFAULT, info.packageName, user)
                     .cacheBytes
                 if (bytes > 0) {
-                    result.add(AppCache(info.packageName, pm.getApplicationLabel(info).toString(), bytes))
+                    // "sistema" = veio de fábrica e nunca foi atualizado pela loja
+                    val system = (info.flags and ApplicationInfo.FLAG_SYSTEM) != 0 &&
+                        (info.flags and ApplicationInfo.FLAG_UPDATED_SYSTEM_APP) == 0
+                    result.add(
+                        AppCache(
+                            info.packageName,
+                            pm.getApplicationLabel(info).toString(),
+                            bytes,
+                            system
+                        )
+                    )
                 }
             } catch (_: Exception) {
                 // app sem permissão de leitura: ignora
